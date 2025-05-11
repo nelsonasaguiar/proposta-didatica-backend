@@ -1,0 +1,58 @@
+name: Deploy to Google Cloud VM
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      # Step 1: Checkout the repository
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      # Step 2: Set up Node.js
+      - name: Use Node.js 20
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+
+      # Step 3: Install dependencies
+      - name: Install dependencies
+        run: npm install
+
+      # Step 4: Build the project
+      - name: Build
+        run: npm run build
+
+      # Step 5: Ensure assets are copied
+      - name: Ensure assets are copied
+        run: |
+          mkdir -p dist/assets
+          cp -r src/assets/* dist/assets/
+
+      # Step 6: Copy files to the VM
+      - name: Copy files to VM
+        uses: appleboy/scp-action@v0.1.4
+        with:
+          host: ${{ secrets.VM_IP }}
+          username: subaruimprezanelson_gmail_com
+          key: ${{ secrets.SSH_PRIVATE_KEY }}
+          source: "dist/,package.json,package-lock.json,start.sh"
+          target: "~/proposta-didatica-vm"
+
+      # Step 7: Configure SSH and run the application
+      - name: Configure SSH and Run
+        uses: appleboy/ssh-action@v1.1.0
+        with:
+          host: ${{ secrets.VM_IP }}
+          username: subaruimprezanelson_gmail_com
+          key: ${{ secrets.SSH_PRIVATE_KEY }}
+          script: |
+            cd ~/proposta-didatica-vm
+            npm install --omit=dev
+            chmod +x start.sh
+            ./start.sh
