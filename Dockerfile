@@ -16,8 +16,10 @@ COPY . .
 # Build the application
 RUN npm run build
 
+RUN npm prune --omit=dev
+
 # Expose the application port
 EXPOSE 3000
 
 # Start the application
-CMD ["npm", "start"]
+CMD ["node", "dist/app.js"]
