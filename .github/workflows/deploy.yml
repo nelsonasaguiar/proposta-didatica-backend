@@ -41,7 +41,7 @@ jobs:
           host: ${{ secrets.VM_IP }}
           username: subaruimprezanelson_gmail_com
           key: ${{ secrets.SSH_PRIVATE_KEY }}
-          source: "dist/,package.json,package-lock.json,start.sh"
+          source: "dist/,package.json,package-lock.json,start.sh,Dockerfile"
           target: "~/proposta-didatica-backend"
 
       # Step 7: Configure SSH and run the application
@@ -53,6 +53,5 @@ jobs:
           key: ${{ secrets.SSH_PRIVATE_KEY }}
           script: |
             cd ~/proposta-didatica-backend
-            npm install --omit=dev
             chmod +x start.sh
             ./start.sh
