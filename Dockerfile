@@ -1,25 +1,7 @@
-# filepath: /Users/nelson/VSCodeProjects/proposta-didatica-backend/Dockerfile
 FROM node:20
-
-# Set the working directory
-WORKDIR /dist
-
-# Copy package.json and package-lock.json
+WORKDIR /app
 COPY package*.json ./
-
-# Install dependencies
-RUN npm install
-
-# Copy the rest of the application code
-COPY . .
-
-# Build the application
-RUN npm run build
-
-RUN npm prune --omit=dev
-
-# Expose the application port
+RUN npm install --only=production
+COPY dist/ ./dist/
 EXPOSE 3000
-
-# Start the application
 CMD ["node", "dist/app.js"]
