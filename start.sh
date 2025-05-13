@@ -14,4 +14,4 @@ docker stop proposta-didatica || true
 docker rm proposta-didatica || true
 
 # Run the new container
-docker run --restart=always -d -p 3030:3030 --name proposta-didatica ${IMAGE}
+docker run --restart=always -d -p 3030:3000 --name proposta-didatica ${IMAGE}

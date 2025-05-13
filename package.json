@@ -16,7 +16,7 @@
   "main": "app.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
-    "build": "tsc",
+    "build": "tsc -p src/tsconfig.json",
     "start": "node dist/app.js",
     "dev": "ts-node src/app.ts"
   },
