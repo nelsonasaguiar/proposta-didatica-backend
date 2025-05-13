@@ -1,7 +1,7 @@
 #!/bin/sh
 
 # Extract the version from package.json
-PACKAGE_VERSION=$(cat ./package.json | grep version | head -1 | awk -F: '{ print $2 }' | sed 's/[", ]//g')
+PACKAGE_VERSION=$(cat ./package.json | grep '"version"' | head -1 | awk -F: '{ print $2 }' | sed 's/[", ]//g')
 
 # Define the Docker image name
 IMAGE="propostadidatica-vm:${PACKAGE_VERSION}"
