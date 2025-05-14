@@ -1,14 +1,14 @@
 {
-  "name": "proposta-didatica-backend",
+  "name": "smart-car-api",
   "version": "1.0.0",
   "description": "",
-  "homepage": "https://github.com/nelsonasaguiar/proposta-didatica-backend#readme",
+  "homepage": "https://github.com/nelsonasaguiar/smart-car-api#readme",
   "bugs": {
-    "url": "https://github.com/nelsonasaguiar/proposta-didatica-backend/issues"
+    "url": "https://github.com/nelsonasaguiar/smart-car-api/issues"
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/nelsonasaguiar/proposta-didatica-backend.git"
+    "url": "git+https://github.com/nelsonasaguiar/smart-car-api.git"
   },
   "license": "ISC",
   "author": "",

@@ -42,7 +42,7 @@ jobs:
           username: subaruimprezanelson_gmail_com
           key: ${{ secrets.SSH_PRIVATE_KEY }}
           source: "Dockerfile,dist/,package.json,package-lock.json,start.sh"
-          target: "~/proposta-didatica-backend"
+          target: "~/smart-car-api"
 
       # Step 7: Configure SSH and run the application
       - name: Configure SSH and Run
@@ -52,6 +52,6 @@ jobs:
           username: subaruimprezanelson_gmail_com
           key: ${{ secrets.SSH_PRIVATE_KEY }}
           script: |
-            cd ~/proposta-didatica-backend
+            cd ~/smart-car-api
             chmod +x start.sh
             ./start.sh
