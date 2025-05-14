@@ -6,6 +6,11 @@ const app: Application = express();
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
+// Add health check endpoint
+app.get('/test', (req, res) => {
+    res.status(200).send('OK');
+});
+
 // Use the router as middleware
 app.use('/', router);
 
