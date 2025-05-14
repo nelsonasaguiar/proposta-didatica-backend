@@ -12,7 +12,7 @@ app.get('/test', (req, res) => {
 });
 
 // Use the router as middleware
-app.use('/', router);
+app.use('/api', router);
 
 const PORT: number = parseInt(process.env.PORT || '3000', 10);
 app.listen(PORT, () => {
