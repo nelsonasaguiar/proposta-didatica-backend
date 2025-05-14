@@ -1,5 +1,5 @@
 import express, { Application } from 'express';
-import router from './routes/index'; // Import the router directly
+import router from './routes/smart-car.routes';
 
 const app: Application = express();
 
@@ -11,5 +11,5 @@ app.use('/', router);
 
 const PORT: number = parseInt(process.env.PORT || '3000', 10);
 app.listen(PORT, () => {
-    console.log(`Server is running on port ${PORT}!`);
+    console.log(`Server is running on port ${PORT}..`);
 });
