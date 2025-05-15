@@ -4,7 +4,7 @@ import smartcarClient from '../services/smartcar.service';
 const smartcar = require('smartcar');
 
 export const login = (_req: Request, res: Response): void => {
-    const authUrl = smartcarClient.getAuthUrl(['read_vehicle_info', 'read_battery', 'read_charge', 'read_vin', 'read_alerts']);
+    const authUrl = smartcarClient.getAuthUrl(['read_vehicle_info', 'read_battery', 'read_charge', 'read_vin', 'read_alerts', 'read_charge_locations', 'read_charge_records', 'read_charge_events', 'read_diagnostics', 'read_location', 'read_odometer', 'read_security', 'control_charge', 'control_security']);
     console.log('authUrl', authUrl);
     res.redirect(authUrl);
 };
@@ -47,7 +47,7 @@ export const getVehicleBattery = async (req: Request, res: Response): Promise<vo
 
 export const getVehicleInfo = async (req: Request, res: Response): Promise<void> => {
     try {
-        const token = req.headers.authorization?.split(' ')[1];
+        const token = await getValidAccessToken(req.params.brand);
         const vehicle = new smartcar.Vehicle(req.params.id, token);
         const info = await vehicle.attributes();
         res.json(info);
@@ -69,13 +69,25 @@ export const refreshToken = async (req: Request, res: Response): Promise<void> =
 
 export const getVehicleVin = async (req: Request, res: Response): Promise<void> => {
     try {
-        const token = req.headers.authorization?.split(' ')[1];
+        const token = await getValidAccessToken(req.params.brand);
         const vehicle = new smartcar.Vehicle(req.params.id, token);
         const vin = await vehicle.vin();
         res.json(vin);
     } catch (err) {
         console.log('err', err);
         res.status(500).json({ error: 'Failed to get vehicle VIN', details: err });
+    }
+};
+
+export const getVehicleOdometer = async (req: Request, res: Response): Promise<void> => {
+    try {
+        const token = await getValidAccessToken(req.params.brand);
+        const vehicle = new smartcar.Vehicle(req.params.id, token);
+        const odometer = await vehicle.odometer();
+        res.json(odometer);
+    } catch (err) {
+        console.log('err', err);
+        res.status(500).json({ error: 'Failed to get vehicle odometer', details: err });
     }
 };
 
@@ -86,5 +98,6 @@ export default {
     getVehiclesForBrand,
     getVehicleInfo,
     refreshToken,
-    getVehicleVin
+    getVehicleVin,
+    getVehicleOdometer
 };

@@ -13,6 +13,7 @@ router.get('/vehicle/:id', smartCarController.getVehicleBattery);
 router.get('/vehicle/:id/info', smartCarController.getVehicleInfo);
 router.get('/vehicle/:id/vin', smartCarController.getVehicleVin);
 router.get('/vehicle/:brand/vehicles', smartCarController.getVehiclesForBrand);
+router.get('/vehicle/:id/odometer', smartCarController.getVehicleOdometer);
 
 
 export default router;
