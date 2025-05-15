@@ -4,7 +4,7 @@ import smartcarClient from '../services/smartcar.service';
 const smartcar = require('smartcar');
 
 export const login = (_req: Request, res: Response): void => {
-    const authUrl = smartcarClient.getAuthUrl(['read_vehicle_info', 'read_battery', 'read_charge', 'read_vin', 'read_alerts', 'read_charge_locations', 'read_charge_records', 'read_charge_events', 'read_diagnostics', 'read_location', 'read_odometer', 'read_security', 'control_charge', 'control_security']);
+    const authUrl = smartcarClient.getAuthUrl(['read_vehicle_info', 'read_battery', 'read_charge', 'read_vin', 'read_alerts', 'read_charge_locations', 'read_diagnostics', 'read_location', 'read_odometer', 'read_security', 'control_charge', 'control_security']);
     console.log('authUrl', authUrl);
     res.redirect(authUrl);
 };
