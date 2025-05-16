@@ -36,7 +36,7 @@ export const callback = async (req: Request, res: Response): Promise<void> => {
             }
         });
 
-        res.redirect("https://propostadidatica.pt/dashboard/vehicles")
+        res.json(token)
     } catch (err) {
         console.log('err', err);
         res.status(500).json({ error: 'Failed to exchange code', details: err });
