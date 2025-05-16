@@ -32,29 +32,40 @@ export const callback = async (req: Request, res: Response): Promise<void> => {
             }
         });
 
-
+        console.log('<<<<<<<<<<-------->>>>>>>>>');
         if (vehicleIds.length > 0) {
             try {
                 const vehicleId = vehicleIds[0]
 
+                console.log('vehicle id: ', vehicleId);
+
                 const vehicleInfo = await getVehicleById(vehicleId)
+
+                console.log('vehicleInfo: ', vehicleInfo);
+
                 const vehicleBrand = vehicleInfo.brand
 
+                console.log('vehicle brand: ', vehicleBrand);
+
+                const tokenToUpdate = {
+                    accessToken: token.accessToken,
+                    refreshToken: token.refreshToken,
+                    expiration: token.expiration,
+                    refreshExpiration: token.refreshExpiration
+                }
+
+                console.log('token to update: ', tokenToUpdate);
+
                 if (vehicleBrand) {
-                    await updateBrandToken(vehicleBrand, {
-                        accessToken: token.accessToken,
-                        refreshToken: token.refreshToken,
-                        expiration: token.expiration,
-                        refreshExpiration: token.refreshExpiration
-                    })
+                    await updateBrandToken(vehicleBrand, tokenToUpdate)
                 }
 
                 console.log('updated brand access token from callback success.');
             } catch (error) {
-                console.log('failed to update brand access token from callback.');
+                console.log('failed to update brand access token from callback: ', error);
             }
-
         }
+        console.log('<<<<<<<<<<-------->>>>>>>>>');
 
         res.json(token)
     } catch (err) {
