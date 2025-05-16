@@ -3,7 +3,7 @@ import { getValidAccessTokenByBrand, getValidAccessTokenByVehicle, updateBrandTo
 import smartcarClient from '../helper/smartcar.helper';
 import { SmartCarToken } from '../models/smartcartoken.model';
 import supabase from '../services/supabase.service';
-import { getVehicleById, updateVehicleSmartCarIdByVin } from '../services/vehicle.service';
+import { getVehicleById, updateVehicleSmartCarIdByVin, getVehicleBySmartCarId } from '../services/vehicle.service';
 
 const smartcar = require('smartcar');
 
@@ -39,7 +39,7 @@ export const callback = async (req: Request, res: Response): Promise<void> => {
 
                 console.log('vehicle id: ', vehicleId);
 
-                const vehicleInfo = await getVehicleById(vehicleId)
+                const vehicleInfo = await getVehicleBySmartCarId(vehicleId)
 
                 console.log('vehicleInfo: ', vehicleInfo);
 

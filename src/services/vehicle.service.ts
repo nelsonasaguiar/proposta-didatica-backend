@@ -14,6 +14,20 @@ export async function getVehicleById(id: string) {
    return data;
 }
 
+export async function getVehicleBySmartCarId(id: string) {
+   const { data, error } = await supabase
+      .from('vehicles')
+      .select('*')
+      .eq('smart_car_id', id)
+      .single();
+
+   if (error) {
+      throw new Error(error.message);
+   }
+
+   return data;
+}
+
 export async function updateVehicleSmartCarIdByVin(vin: string, vehicleId: string) {
    const { error } = await supabase
       .from('vehicles')
