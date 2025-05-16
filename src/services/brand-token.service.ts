@@ -1,5 +1,5 @@
 import { isPlateNumberFormat } from "../utils/main-utils";
-import smartcarClient from "./smartcar.service";
+import smartcarClient from "../helper/smartcar.helper";
 import supabase from "./supabase.service";
 
 async function getBrandToken(brand: string) {
@@ -85,4 +85,4 @@ async function getValidAccessTokenByVehicle(vehicleId: string) {
    return getValidAccessTokenByBrand(brand);
 }
 
-export { getValidAccessTokenByBrand, getValidAccessTokenByVehicle };
+export { getValidAccessTokenByBrand, getValidAccessTokenByVehicle, updateBrandToken };

@@ -1,8 +1,9 @@
 import { Request, Response } from 'express';
-import { getValidAccessTokenByBrand, getValidAccessTokenByVehicle } from '../services/brand-token.service';
-import smartcarClient from '../services/smartcar.service';
+import { getValidAccessTokenByBrand, getValidAccessTokenByVehicle, updateBrandToken } from '../services/brand-token.service';
+import smartcarClient from '../helper/smartcar.helper';
 import { SmartCarToken } from '../models/smartcartoken.model';
 import supabase from '../services/supabase.service';
+import { getVehicleById, updateVehicleSmartCarIdByVin } from '../services/vehicle.service';
 
 const smartcar = require('smartcar');
 
@@ -15,7 +16,7 @@ export const login = (_req: Request, res: Response): void => {
 export const callback = async (req: Request, res: Response): Promise<void> => {
     try {
         console.log('callback called');
-        console.log('req.query', req.query);
+        console.log('req.query', req.query.code);
 
 
         const code = req.query.code as string;
@@ -27,15 +28,33 @@ export const callback = async (req: Request, res: Response): Promise<void> => {
             const vinRes = await smartCarVehicle.vin();
 
             if (vinRes.vin) {
-                await supabase
-                    .from('vehicles')
-                    .update({ smart_car_id: vehicleId })
-                    .eq('vin', vinRes.vin);
-
-                console.log('Updated vehicle in Supabase:', vinRes.vin);
+                await updateVehicleSmartCarIdByVin(vinRes.vin, vehicleId)
             }
         });
 
+
+        if (vehicleIds.length > 0) {
+            try {
+                const vehicleId = vehicleIds[0]
+
+                const vehicleInfo = await getVehicleById(vehicleId)
+                const vehicleBrand = vehicleInfo.brand
+
+                if (vehicleBrand) {
+                    await updateBrandToken(vehicleBrand, {
+                        accessToken: token.accessToken,
+                        refreshToken: token.refreshToken,
+                        expiration: token.expiration,
+                        refreshExpiration: token.refreshExpiration
+                    })
+                }
+
+                console.log('updated brand access token from callback success.');
+            } catch (error) {
+                console.log('failed to update brand access token from callback.');
+            }
+
+        }
 
         res.json(token)
     } catch (err) {
