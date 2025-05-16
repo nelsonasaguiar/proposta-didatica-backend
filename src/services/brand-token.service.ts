@@ -1,3 +1,4 @@
+import { isPlateNumberFormat } from "../utils/main-utils";
 import smartcarClient from "./smartcar.service";
 import supabase from "./supabase.service";
 
@@ -57,10 +58,30 @@ async function getBrandByVehicleId(vehicleId: string) {
    return data.brand;
 }
 
+// Add a function to find brand by vehicle plate
+async function getBrandByVehiclePlate(plate: string) {
+   const { data, error } = await supabase
+      .from('vehicles')
+      .select('brand')
+      .eq('plate_number', plate)
+      .single();
+   if (error) throw error;
+   return data.brand;
+}
+
 // Modify getValidAccessToken to work with vehicle ID
-async function getValidAccessTokenByVehicleId(vehicleId: string) {
-   const brand = await getBrandByVehicleId(vehicleId);
+async function getValidAccessTokenByVehicle(vehicleId: string) {
+   const isPlateFormat = isPlateNumberFormat(vehicleId)
+   console.log('isPlateFormat: ', isPlateFormat);
+   const brand = isPlateFormat ? await getBrandByVehiclePlate(vehicleId) : await getBrandByVehicleId(vehicleId);
+
+   console.log('brand: ', brand);
+
+   if (!brand) {
+      return null
+   }
+
    return getValidAccessTokenByBrand(brand);
 }
 
-export { getValidAccessTokenByBrand, getValidAccessTokenByVehicleId };
+export { getValidAccessTokenByBrand, getValidAccessTokenByVehicle };

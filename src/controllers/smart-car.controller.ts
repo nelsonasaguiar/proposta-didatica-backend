@@ -1,5 +1,5 @@
 import { Request, Response } from 'express';
-import { getValidAccessTokenByBrand, getValidAccessTokenByVehicleId } from '../services/brand-token.service';
+import { getValidAccessTokenByBrand, getValidAccessTokenByVehicle } from '../services/brand-token.service';
 import smartcarClient from '../services/smartcar.service';
 import { SmartCarToken } from '../models/smartcartoken.model';
 import supabase from '../services/supabase.service';
@@ -14,6 +14,10 @@ export const login = (_req: Request, res: Response): void => {
 
 export const callback = async (req: Request, res: Response): Promise<void> => {
     try {
+        console.log('callback called');
+        console.log('req.query', req.query);
+
+
         const code = req.query.code as string;
         const token = (await smartcarClient.exchangeCode(code)) as SmartCarToken;
         const vehiclesRes = await smartcar.getVehicles(token.accessToken);
@@ -53,7 +57,7 @@ export const getVehiclesForBrand = async (req: Request, res: Response): Promise<
 
 export const getVehicleBattery = async (req: Request, res: Response): Promise<void> => {
     try {
-        const token = await getValidAccessTokenByVehicleId(req.params.id);
+        const token = await getValidAccessTokenByVehicle(req.params.id);
         const vehicle = new smartcar.Vehicle(req.params.id, token);
         const battery = await vehicle.battery();
         res.json(battery);
@@ -65,8 +69,13 @@ export const getVehicleBattery = async (req: Request, res: Response): Promise<vo
 
 export const getVehicleInfo = async (req: Request, res: Response): Promise<void> => {
     try {
-        const token = await getValidAccessTokenByVehicleId(req.params.id);
+        console.log('req params id: ', req.params.id);
+        const token = await getValidAccessTokenByVehicle(req.params.id);
+
+        console.log('token: ', token);
+
         const vehicle = new smartcar.Vehicle(req.params.id, token);
+
         const info = await vehicle.attributes();
         res.json(info);
     } catch (err) {
@@ -77,7 +86,7 @@ export const getVehicleInfo = async (req: Request, res: Response): Promise<void>
 
 export const getVehicleVin = async (req: Request, res: Response): Promise<void> => {
     try {
-        const token = await getValidAccessTokenByVehicleId(req.params.id);
+        const token = await getValidAccessTokenByVehicle(req.params.id);
         const vehicle = new smartcar.Vehicle(req.params.id, token);
         const vin = await vehicle.vin();
         res.json(vin);
@@ -89,7 +98,7 @@ export const getVehicleVin = async (req: Request, res: Response): Promise<void> 
 
 export const getVehicleOdometer = async (req: Request, res: Response): Promise<void> => {
     try {
-        const token = await getValidAccessTokenByVehicleId(req.params.id);
+        const token = await getValidAccessTokenByVehicle(req.params.id);
         const vehicle = new smartcar.Vehicle(req.params.id, token);
         const odometer = await vehicle.odometer();
         res.json(odometer);
@@ -101,7 +110,7 @@ export const getVehicleOdometer = async (req: Request, res: Response): Promise<v
 
 export const getVehicleLocation = async (req: Request, res: Response): Promise<void> => {
     try {
-        const token = await getValidAccessTokenByVehicleId(req.params.id);
+        const token = await getValidAccessTokenByVehicle(req.params.id);
         const vehicle = new smartcar.Vehicle(req.params.id, token);
         const location = await vehicle.location();
         res.json(location);
