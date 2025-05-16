@@ -23,7 +23,7 @@ export const callback = async (req: Request, res: Response): Promise<void> => {
         const vehiclesRes = await smartcar.getVehicles(token.accessToken);
         const vehicleIds = vehiclesRes.vehicles.map((vehicle: string) => vehicle);
         vehicleIds.forEach(async (vehicleId: string) => {
-            const smartCarVehicle = new smartcar.Vehicle(vehicleId, token);
+            const smartCarVehicle = new smartcar.Vehicle(vehicleId, token.accessToken);
             const vinRes = await smartCarVehicle.vin();
 
             if (vinRes.vin) {
@@ -35,6 +35,7 @@ export const callback = async (req: Request, res: Response): Promise<void> => {
                 console.log('Updated vehicle in Supabase:', vinRes.vin);
             }
         });
+
 
         res.json(token)
     } catch (err) {

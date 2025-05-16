@@ -44,6 +44,7 @@ async function getValidAccessTokenByBrand(brand: string) {
       });
       return tokens.accessToken;
    }
+   console.log('token is still valid');
    return tokenData.access_token;
 }
 
