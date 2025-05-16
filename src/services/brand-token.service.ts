@@ -1,7 +1,6 @@
 import smartcarClient from "./smartcar.service";
 import supabase from "./supabase.service";
 
-
 async function getBrandToken(brand: string) {
    const { data, error } = await supabase
       .from('smart_car_tokens')
@@ -26,10 +25,8 @@ async function updateBrandToken(brand: string, tokens: { accessToken: string, re
    if (error) throw error;
 }
 
-async function getValidAccessToken(brand: string) {
+async function getValidAccessTokenByBrand(brand: string) {
    let tokenData = await getBrandToken(brand);
-
-   console.log('token data: ', tokenData);
 
    const now = new Date();
    // Ensure the database timestamp is treated as UTC by appending 'Z'
@@ -49,4 +46,21 @@ async function getValidAccessToken(brand: string) {
    return tokenData.access_token;
 }
 
-export default getValidAccessToken
+// Add a function to find brand by vehicle ID
+async function getBrandByVehicleId(vehicleId: string) {
+   const { data, error } = await supabase
+      .from('vehicles')
+      .select('brand')
+      .eq('smart_car_id', vehicleId)
+      .single();
+   if (error) throw error;
+   return data.brand;
+}
+
+// Modify getValidAccessToken to work with vehicle ID
+async function getValidAccessTokenByVehicleId(vehicleId: string) {
+   const brand = await getBrandByVehicleId(vehicleId);
+   return getValidAccessTokenByBrand(brand);
+}
+
+export { getValidAccessTokenByBrand, getValidAccessTokenByVehicleId };
