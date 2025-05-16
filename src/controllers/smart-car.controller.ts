@@ -3,7 +3,8 @@ import { getValidAccessTokenByBrand, getValidAccessTokenByVehicle, updateBrandTo
 import smartcarClient from '../helper/smartcar.helper';
 import { SmartCarToken } from '../models/smartcartoken.model';
 import supabase from '../services/supabase.service';
-import { getVehicleById, updateVehicleSmartCarIdByVin, getVehicleBySmartCarId } from '../services/vehicle.service';
+import { getVehicleById, updateVehicleSmartCarIdByVin, getVehicleBySmartCarId, getSmartCarIdByPlate } from '../services/vehicle.service';
+import { isPlateNumberFormat } from '../utils/main-utils';
 
 const smartcar = require('smartcar');
 
@@ -88,8 +89,13 @@ export const getVehiclesForBrand = async (req: Request, res: Response): Promise<
 
 export const getVehicleBattery = async (req: Request, res: Response): Promise<void> => {
     try {
-        const token = await getValidAccessTokenByVehicle(req.params.id);
-        const vehicle = new smartcar.Vehicle(req.params.id, token);
+        const submittedId = req.params.id
+        const token = await getValidAccessTokenByVehicle(submittedId);
+
+        const actualSmartCarId = isPlateNumberFormat(submittedId) ? await getSmartCarIdByPlate(submittedId) : submittedId
+
+        const vehicle = new smartcar.Vehicle(actualSmartCarId, token);
+
         const battery = await vehicle.battery();
         res.json(battery);
     } catch (err) {
@@ -100,12 +106,12 @@ export const getVehicleBattery = async (req: Request, res: Response): Promise<vo
 
 export const getVehicleInfo = async (req: Request, res: Response): Promise<void> => {
     try {
-        console.log('req params id: ', req.params.id);
-        const token = await getValidAccessTokenByVehicle(req.params.id);
+        const submittedId = req.params.id
+        const token = await getValidAccessTokenByVehicle(submittedId);
 
-        console.log('token: ', token);
+        const actualSmartCarId = isPlateNumberFormat(submittedId) ? await getSmartCarIdByPlate(submittedId) : submittedId
 
-        const vehicle = new smartcar.Vehicle(req.params.id, token);
+        const vehicle = new smartcar.Vehicle(actualSmartCarId, token);
 
         const info = await vehicle.attributes();
         res.json(info);
@@ -118,6 +124,9 @@ export const getVehicleInfo = async (req: Request, res: Response): Promise<void>
 export const getVehicleVin = async (req: Request, res: Response): Promise<void> => {
     try {
         const token = await getValidAccessTokenByVehicle(req.params.id);
+
+        console.log('token: ', token);
+
         const vehicle = new smartcar.Vehicle(req.params.id, token);
         const vin = await vehicle.vin();
         res.json(vin);
@@ -129,8 +138,13 @@ export const getVehicleVin = async (req: Request, res: Response): Promise<void> 
 
 export const getVehicleOdometer = async (req: Request, res: Response): Promise<void> => {
     try {
-        const token = await getValidAccessTokenByVehicle(req.params.id);
-        const vehicle = new smartcar.Vehicle(req.params.id, token);
+        const submittedId = req.params.id
+        const token = await getValidAccessTokenByVehicle(submittedId);
+
+        const actualSmartCarId = isPlateNumberFormat(submittedId) ? await getSmartCarIdByPlate(submittedId) : submittedId
+
+        const vehicle = new smartcar.Vehicle(actualSmartCarId, token);
+
         const odometer = await vehicle.odometer();
         res.json(odometer);
     } catch (err) {
@@ -141,8 +155,13 @@ export const getVehicleOdometer = async (req: Request, res: Response): Promise<v
 
 export const getVehicleLocation = async (req: Request, res: Response): Promise<void> => {
     try {
-        const token = await getValidAccessTokenByVehicle(req.params.id);
-        const vehicle = new smartcar.Vehicle(req.params.id, token);
+        const submittedId = req.params.id
+        const token = await getValidAccessTokenByVehicle(submittedId);
+
+        const actualSmartCarId = isPlateNumberFormat(submittedId) ? await getSmartCarIdByPlate(submittedId) : submittedId
+
+        const vehicle = new smartcar.Vehicle(actualSmartCarId, token);
+
         const location = await vehicle.location();
         res.json(location);
     } catch (err) {

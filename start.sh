@@ -14,7 +14,7 @@ docker stop smart-car-api || true
 docker rm smart-car-api || true
 
 # Run the new container
-docker run --restart=always -d -p 3030:3000 --name smart-car-api ${IMAGE}
+docker run --restart=always --network backend-network -d -p 3030:3000 --name smart-car-api ${IMAGE}
 
 # Keep only the 3 most recent versions
 echo "Cleaning up old images, keeping only the 3 most recent..."

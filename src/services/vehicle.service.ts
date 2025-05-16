@@ -14,6 +14,20 @@ export async function getVehicleById(id: string) {
    return data;
 }
 
+export async function getSmartCarIdByPlate(plate: string): Promise<string | null> {
+   const { data, error } = await supabase
+      .from('vehicles')
+      .select('smart_car_id')
+      .eq('plate_number', plate)
+      .single();
+
+   if (error) {
+      throw new Error(error.message);
+   }
+
+   return data ? data.smart_car_id : null;
+}
+
 export async function getVehicleBySmartCarId(id: string) {
    const { data, error } = await supabase
       .from('vehicles')
