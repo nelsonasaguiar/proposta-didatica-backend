@@ -10,7 +10,7 @@ app.use(cors());
 
 // Add health check endpoint
 app.get('/test', (req, res) => {
-    res.status(200).send('OK');
+    res.status(200).send('OK!');
 });
 
 // Use the router as middleware
