@@ -1,6 +1,6 @@
 import express, { Application } from 'express';
-import router from './routes/email.routes';
 import cors from 'cors';
+import smartCarRoutes from './routes/smart-car.routes';
 
 const app: Application = express();
 
@@ -14,7 +14,7 @@ app.get('/test', (req, res) => {
 });
 
 // Use the router as middleware
-app.use('/api', router);
+app.use('/api', smartCarRoutes);
 
 const PORT: number = parseInt(process.env.PORT || '3000', 10);
 app.listen(PORT, () => {
