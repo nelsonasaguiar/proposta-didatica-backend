@@ -9,7 +9,7 @@ import { isPlateNumberFormat } from '../utils/main-utils';
 const smartcar = require('smartcar');
 
 export const login = (_req: Request, res: Response): void => {
-    const authUrl = smartcarClient.getAuthUrl(['read_vehicle_info', 'read_battery', 'read_charge', 'read_vin', 'read_alerts', 'read_charge_locations', 'read_diagnostics', 'read_location', 'read_odometer', 'read_security', 'control_charge', 'control_security']);
+    const authUrl = smartcarClient.getAuthUrl(['read_vehicle_info', 'read_battery', 'read_charge', 'read_vin', 'read_alerts', 'read_charge_locations', 'read_diagnostics', 'read_location', 'read_odometer', 'read_security', 'control_charge', 'control_security', 'read_tires']);
     console.log('authUrl', authUrl);
     res.redirect(authUrl);
 };
@@ -77,7 +77,6 @@ export const callback = async (req: Request, res: Response): Promise<void> => {
 
 export const getVehiclesForBrand = async (req: Request, res: Response): Promise<void> => {
     try {
-        console.log('getting vehicles for brand: ', req.params.brand);
         const token = await getValidAccessTokenByBrand(req.params.brand);
         const vehicles = await smartcar.getVehicles(token);
         res.json(vehicles);
@@ -104,6 +103,23 @@ export const getVehicleBattery = async (req: Request, res: Response): Promise<vo
     }
 };
 
+export const getVehicleCharge = async (req: Request, res: Response): Promise<void> => {
+    try {
+        const submittedId = req.params.id
+        const token = await getValidAccessTokenByVehicle(submittedId);
+
+        const actualSmartCarId = isPlateNumberFormat(submittedId) ? await getSmartCarIdByPlate(submittedId) : submittedId
+
+        const vehicle = new smartcar.Vehicle(actualSmartCarId, token);
+
+        const charge = await vehicle.charge();
+        res.json(charge);
+    } catch (err) {
+        console.log('err', err);
+        res.status(500).json({ error: 'Failed to get vehicle charge info', details: err });
+    }
+}
+
 export const getVehicleInfo = async (req: Request, res: Response): Promise<void> => {
     try {
         const submittedId = req.params.id
@@ -123,11 +139,12 @@ export const getVehicleInfo = async (req: Request, res: Response): Promise<void>
 
 export const getVehicleVin = async (req: Request, res: Response): Promise<void> => {
     try {
-        const token = await getValidAccessTokenByVehicle(req.params.id);
+        const submittedId = req.params.id
+        const token = await getValidAccessTokenByVehicle(submittedId);
 
-        console.log('token: ', token);
+        const actualSmartCarId = isPlateNumberFormat(submittedId) ? await getSmartCarIdByPlate(submittedId) : submittedId
 
-        const vehicle = new smartcar.Vehicle(req.params.id, token);
+        const vehicle = new smartcar.Vehicle(actualSmartCarId, token);
         const vin = await vehicle.vin();
         res.json(vin);
     } catch (err) {
@@ -170,6 +187,124 @@ export const getVehicleLocation = async (req: Request, res: Response): Promise<v
     }
 };
 
+export const getVehicleBatteryCapacity = async (req: Request, res: Response): Promise<void> => {
+    try {
+        const submittedId = req.params.id
+        const token = await getValidAccessTokenByVehicle(submittedId);
+
+        const actualSmartCarId = isPlateNumberFormat(submittedId) ? await getSmartCarIdByPlate(submittedId) : submittedId
+
+        const vehicle = new smartcar.Vehicle(actualSmartCarId, token);
+
+        const batteryCapacity = await vehicle.batteryCapacity();
+        res.json(batteryCapacity);
+    } catch (err) {
+        console.log('err', err);
+        res.status(500).json({ error: 'Failed to get vehicle battery capacity', details: err });
+    }
+};
+
+export const setVehicleChargeLimit = async (req: Request, res: Response): Promise<void> => {
+    try {
+        const submittedId = req.params.id;
+        const { limit } = req.body;
+
+        if (typeof limit !== 'number' || limit < 0.5 || limit > 1) {
+            res.status(400).json({ error: 'Invalid charge limit. Must be between 0.5 and 1' });
+            return;
+        }
+
+        const token = await getValidAccessTokenByVehicle(submittedId);
+        const actualSmartCarId = isPlateNumberFormat(submittedId) ? await getSmartCarIdByPlate(submittedId) : submittedId;
+        const vehicle = new smartcar.Vehicle(actualSmartCarId, token);
+
+        const result = await vehicle.setChargeLimit(limit);
+        res.json(result);
+    } catch (err) {
+        console.log('err', err);
+        res.status(500).json({ error: 'Failed to set vehicle charge limit', details: err });
+    }
+};
+
+export const controlVehicleCharge = async (req: Request, res: Response): Promise<void> => {
+    try {
+        const submittedId = req.params.id;
+        const { action } = req.body;
+
+        if (!action || !['START', 'STOP'].includes(action.toUpperCase())) {
+            res.status(400).json({ error: 'Invalid action. Must be START or STOP' });
+            return;
+        }
+
+        const token = await getValidAccessTokenByVehicle(submittedId);
+        const actualSmartCarId = isPlateNumberFormat(submittedId) ? await getSmartCarIdByPlate(submittedId) : submittedId;
+        const vehicle = new smartcar.Vehicle(actualSmartCarId, token);
+
+        const result = action.toUpperCase() === 'START'
+            ? await vehicle.startCharge()
+            : await vehicle.stopCharge();
+
+        res.json(result);
+    } catch (err) {
+        console.log('err', err);
+        res.status(500).json({ error: 'Failed to control vehicle charge', details: err });
+    }
+};
+
+export const getVehicleSystemStatus = async (req: Request, res: Response): Promise<void> => {
+    try {
+        const submittedId = req.params.id;
+        const token = await getValidAccessTokenByVehicle(submittedId);
+
+        const actualSmartCarId = isPlateNumberFormat(submittedId) ? await getSmartCarIdByPlate(submittedId) : submittedId;
+        const vehicle = new smartcar.Vehicle(actualSmartCarId, token);
+
+        const systemStatus = await vehicle.systemStatus();
+        res.json(systemStatus);
+    } catch (err) {
+        console.log('err', err);
+        res.status(500).json({ error: 'Failed to get vehicle system status', details: err });
+    }
+};
+
+export const getVehicleTirePressure = async (req: Request, res: Response): Promise<void> => {
+    try {
+        const submittedId = req.params.id;
+        const token = await getValidAccessTokenByVehicle(submittedId);
+
+        const actualSmartCarId = isPlateNumberFormat(submittedId) ? await getSmartCarIdByPlate(submittedId) : submittedId;
+        const vehicle = new smartcar.Vehicle(actualSmartCarId, token);
+
+        const tirePressure = await vehicle.tirePressure();
+        res.json(tirePressure);
+    } catch (err) {
+        console.log('err', err);
+        res.status(500).json({ error: 'Failed to get vehicle tire pressure', details: err });
+    }
+};
+
+export const batchVehicleRequests = async (req: Request, res: Response): Promise<void> => {
+    try {
+        const submittedId = req.params.id;
+        const { requests } = req.body;
+
+        if (!Array.isArray(requests)) {
+            res.status(400).json({ error: 'Invalid requests. Must be an array of paths' });
+            return;
+        }
+
+        const token = await getValidAccessTokenByVehicle(submittedId);
+        const actualSmartCarId = isPlateNumberFormat(submittedId) ? await getSmartCarIdByPlate(submittedId) : submittedId;
+        const vehicle = new smartcar.Vehicle(actualSmartCarId, token);
+
+        const batchResponse = await vehicle.batch(requests);
+        res.json(batchResponse);
+    } catch (err) {
+        console.log('err', err);
+        res.status(500).json({ error: 'Failed to process batch requests', details: err });
+    }
+};
+
 export default {
     login,
     callback,
@@ -178,5 +313,12 @@ export default {
     getVehicleInfo,
     getVehicleVin,
     getVehicleOdometer,
-    getVehicleLocation
+    getVehicleLocation,
+    getVehicleCharge,
+    getVehicleBatteryCapacity,
+    setVehicleChargeLimit,
+    controlVehicleCharge,
+    getVehicleSystemStatus,
+    getVehicleTirePressure,
+    batchVehicleRequests
 };
