@@ -5,6 +5,8 @@ import { SmartCarToken } from '../models/smartcartoken.model';
 import supabase from '../services/supabase.service';
 import { getVehicleById, updateVehicleSmartCarIdByVin, getVehicleBySmartCarId, getSmartCarIdByPlate } from '../services/vehicle.service';
 import { isPlateNumberFormat } from '../utils/main-utils';
+import { updateVehicleData } from '../services/vehicle-data.service';
+import { getAddressFromCoordinates } from '../utils/geocoding';
 
 const smartcar = require('smartcar');
 
@@ -75,31 +77,155 @@ export const callback = async (req: Request, res: Response): Promise<void> => {
     }
 };
 
-export const getVehiclesForBrand = async (req: Request, res: Response): Promise<void> => {
-    try {
-        const token = await getValidAccessTokenByBrand(req.params.brand);
-        const vehicles = await smartcar.getVehicles(token);
-        res.json(vehicles);
-    } catch (err) {
-        console.log('err', err);
-        res.status(500).json({ error: 'Failed to get vehicles for brand', details: err });
-    }
+async function shouldUpdateData(vehicleId: string, featureName: string): Promise<{ boolean: boolean, minutesRemaining: number }> {
+    const { data, error } = await supabase
+        .from('vehicles')
+        .select('latest_car_data')
+        .eq('id', vehicleId)
+        .single();
+
+    if (error) return { boolean: true, minutesRemaining: 0 }; // If error, assume we need to update
+
+    const latestData = data?.latest_car_data?.[featureName];
+    if (!latestData?.fetched_at) return { boolean: true, minutesRemaining: 0 };
+
+    const lastFetched = new Date(latestData.fetched_at);
+    const thirtyMinutesAgo = new Date(Date.now() - 30 * 60 * 1000);
+
+    const minutesRemaining = Math.ceil((lastFetched.getTime() + 30 * 60 * 1000 - Date.now()) / 60000);
+
+    return { boolean: lastFetched < thirtyMinutesAgo, minutesRemaining };
 }
 
 export const getVehicleBattery = async (req: Request, res: Response): Promise<void> => {
     try {
-        const submittedId = req.params.id
+        const submittedId = req.params.id;
         const token = await getValidAccessTokenByVehicle(submittedId);
+        const actualSmartCarId = isPlateNumberFormat(submittedId) ? await getSmartCarIdByPlate(submittedId) : submittedId;
 
-        const actualSmartCarId = isPlateNumberFormat(submittedId) ? await getSmartCarIdByPlate(submittedId) : submittedId
+        if (!actualSmartCarId) {
+            res.status(404).json({ error: 'Vehicle not found' });
+            return;
+        }
 
-        const vehicle = new smartcar.Vehicle(actualSmartCarId, token);
+        const vehicle = await getVehicleBySmartCarId(actualSmartCarId);
+        if (!vehicle) {
+            res.status(404).json({ error: 'Vehicle not found' });
+            return;
+        }
 
-        const battery = await vehicle.battery();
+        const shouldUpdate = await shouldUpdateData(vehicle.id, 'battery');
+        if (!shouldUpdate.boolean) {
+            res.json({ warning: 'Please wait before requesting battery data again', minutesRemaining: shouldUpdate.minutesRemaining });
+            return;
+        }
+
+        const smartCarVehicle = new smartcar.Vehicle(actualSmartCarId, token);
+        const battery = await smartCarVehicle.battery();
+
+        await updateVehicleData(
+            vehicle.id,
+            'battery',
+            {
+                percentRemaining: battery.percentRemaining,
+                range: battery.range
+            },
+            battery.meta.fetchedAt,
+            battery.meta.dataAge
+        );
+
         res.json(battery);
     } catch (err) {
         console.log('err', err);
         res.status(500).json({ error: 'Failed to get vehicle battery info', details: err });
+    }
+};
+
+export const getVehicleOdometer = async (req: Request, res: Response): Promise<void> => {
+    try {
+        const submittedId = req.params.id;
+        const token = await getValidAccessTokenByVehicle(submittedId);
+        const actualSmartCarId = isPlateNumberFormat(submittedId) ? await getSmartCarIdByPlate(submittedId) : submittedId;
+        if (!actualSmartCarId) {
+            res.status(404).json({ error: 'Vehicle not found' });
+            return;
+        }
+        const vehicle = await getVehicleBySmartCarId(actualSmartCarId);
+        if (!vehicle) {
+            res.status(404).json({ error: 'Vehicle not found' });
+            return;
+        }
+
+        const shouldUpdate = await shouldUpdateData(vehicle.id, 'odometer');
+        if (!shouldUpdate.boolean) {
+            res.json({ warning: 'Please wait before requesting odometer data again', minutesRemaining: shouldUpdate.minutesRemaining });
+            return;
+        }
+
+        const smartCarVehicle = new smartcar.Vehicle(actualSmartCarId, token);
+        const odometer = await smartCarVehicle.odometer();
+
+        await updateVehicleData(
+            vehicle.id,
+            'odometer',
+            {
+                distance: odometer.distance,
+                unitSystem: odometer.meta.unitSystem
+            },
+            odometer.meta.fetchedAt,
+            odometer.meta.dataAge
+        );
+
+        res.json(odometer);
+    } catch (err) {
+        console.log('err', err);
+        res.status(500).json({ error: 'Failed to get vehicle odometer', details: err });
+    }
+};
+
+export const getVehicleLocation = async (req: Request, res: Response): Promise<void> => {
+    try {
+        const submittedId = req.params.id;
+        const token = await getValidAccessTokenByVehicle(submittedId);
+        const actualSmartCarId = isPlateNumberFormat(submittedId) ? await getSmartCarIdByPlate(submittedId) : submittedId;
+        if (!actualSmartCarId) {
+            res.status(404).json({ error: 'Vehicle not found' });
+            return;
+        }
+        const vehicle = await getVehicleBySmartCarId(actualSmartCarId);
+        if (!vehicle) {
+            res.status(404).json({ error: 'Vehicle not found' });
+            return;
+        }
+
+        const shouldUpdate = await shouldUpdateData(vehicle.id, 'location');
+        if (!shouldUpdate.boolean) {
+            res.json({ warning: 'Please wait before requesting location data again', minutesRemaining: shouldUpdate.minutesRemaining });
+            return;
+        }
+
+        const smartCarVehicle = new smartcar.Vehicle(actualSmartCarId, token);
+        const location = await smartCarVehicle.location();
+        const address = await getAddressFromCoordinates(location.latitude, location.longitude);
+
+        console.log('location: ', location);
+
+        await updateVehicleData(
+            vehicle.id,
+            'location',
+            {
+                latitude: location.latitude,
+                longitude: location.longitude,
+                address: address
+            },
+            location.meta.fetchedAt,
+            location.meta.dataAge
+        );
+
+        res.json(location);
+    } catch (err) {
+        console.log('err', err);
+        res.status(500).json({ error: 'Failed to get vehicle location', details: err });
     }
 };
 
@@ -113,10 +239,33 @@ export const getVehicleCharge = async (req: Request, res: Response): Promise<voi
         const vehicle = new smartcar.Vehicle(actualSmartCarId, token);
 
         const charge = await vehicle.charge();
+
+        await updateVehicleData(
+            vehicle.id,
+            'charge',
+            {
+                isPluggedIn: charge.isPluggedIn,
+                state: charge.state
+            },
+            charge.meta.fetchedAt,
+            charge.meta.dataAge
+        );
+
         res.json(charge);
     } catch (err) {
         console.log('err', err);
         res.status(500).json({ error: 'Failed to get vehicle charge info', details: err });
+    }
+}
+
+export const getVehiclesForBrand = async (req: Request, res: Response): Promise<void> => {
+    try {
+        const token = await getValidAccessTokenByBrand(req.params.brand);
+        const vehicles = await smartcar.getVehicles(token);
+        res.json(vehicles);
+    } catch (err) {
+        console.log('err', err);
+        res.status(500).json({ error: 'Failed to get vehicles for brand', details: err });
     }
 }
 
@@ -150,40 +299,6 @@ export const getVehicleVin = async (req: Request, res: Response): Promise<void> 
     } catch (err) {
         console.log('err', err);
         res.status(500).json({ error: 'Failed to get vehicle VIN', details: err });
-    }
-};
-
-export const getVehicleOdometer = async (req: Request, res: Response): Promise<void> => {
-    try {
-        const submittedId = req.params.id
-        const token = await getValidAccessTokenByVehicle(submittedId);
-
-        const actualSmartCarId = isPlateNumberFormat(submittedId) ? await getSmartCarIdByPlate(submittedId) : submittedId
-
-        const vehicle = new smartcar.Vehicle(actualSmartCarId, token);
-
-        const odometer = await vehicle.odometer();
-        res.json(odometer);
-    } catch (err) {
-        console.log('err', err);
-        res.status(500).json({ error: 'Failed to get vehicle odometer', details: err });
-    }
-};
-
-export const getVehicleLocation = async (req: Request, res: Response): Promise<void> => {
-    try {
-        const submittedId = req.params.id
-        const token = await getValidAccessTokenByVehicle(submittedId);
-
-        const actualSmartCarId = isPlateNumberFormat(submittedId) ? await getSmartCarIdByPlate(submittedId) : submittedId
-
-        const vehicle = new smartcar.Vehicle(actualSmartCarId, token);
-
-        const location = await vehicle.location();
-        res.json(location);
-    } catch (err) {
-        console.log('err', err);
-        res.status(500).json({ error: 'Failed to get vehicle location', details: err });
     }
 };
 
@@ -259,8 +374,8 @@ export const getVehicleSystemStatus = async (req: Request, res: Response): Promi
         const actualSmartCarId = isPlateNumberFormat(submittedId) ? await getSmartCarIdByPlate(submittedId) : submittedId;
         const vehicle = new smartcar.Vehicle(actualSmartCarId, token);
 
-        const systemStatus = await vehicle.systemStatus();
-        res.json(systemStatus);
+        const result = await vehicle.diagnosticSystemStatus();
+        res.json(result);
     } catch (err) {
         console.log('err', err);
         res.status(500).json({ error: 'Failed to get vehicle system status', details: err });
@@ -289,7 +404,10 @@ export const batchVehicleRequests = async (req: Request, res: Response): Promise
         const { requests } = req.body;
 
         if (!Array.isArray(requests)) {
-            res.status(400).json({ error: 'Invalid requests. Must be an array of paths' });
+            res.status(400).json({
+                error: 'Invalid request format',
+                message: 'Please send requests as a JSON array: { "requests": ["/odometer", "/location"] }'
+            });
             return;
         }
 
@@ -297,8 +415,23 @@ export const batchVehicleRequests = async (req: Request, res: Response): Promise
         const actualSmartCarId = isPlateNumberFormat(submittedId) ? await getSmartCarIdByPlate(submittedId) : submittedId;
         const vehicle = new smartcar.Vehicle(actualSmartCarId, token);
 
+        console.log('Making batch request with paths:', requests);
         const batchResponse = await vehicle.batch(requests);
-        res.json(batchResponse);
+        console.log('Smartcar batch response:', batchResponse);
+
+        // Call each function to get the actual data
+        const results = await Promise.all(
+            requests.map(async (path) => {
+                const key = path.replace('/', '');
+                const data = await batchResponse[key]();
+                return {
+                    path,
+                    data
+                };
+            })
+        );
+
+        res.json({ responses: results });
     } catch (err) {
         console.log('err', err);
         res.status(500).json({ error: 'Failed to process batch requests', details: err });

@@ -1,6 +1,7 @@
 import express, { Application } from 'express';
 import cors from 'cors';
 import smartCarRoutes from './routes/smart-car.routes';
+import { startCronJobs } from './services/cron.service';
 
 const app: Application = express();
 
@@ -15,6 +16,9 @@ app.get('/test', (req, res) => {
 
 // Use the router as middleware
 app.use('/api', smartCarRoutes);
+
+// Start cron jobs
+startCronJobs();
 
 const PORT: number = parseInt(process.env.PORT || '3000', 10);
 app.listen(PORT, () => {

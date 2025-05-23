@@ -33,7 +33,7 @@ export async function getVehicleBySmartCarId(id: string) {
       .from('vehicles')
       .select('*')
       .eq('smart_car_id', id)
-      .single();
+      .maybeSingle();
 
    if (error) {
       throw new Error(error.message);
